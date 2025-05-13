@@ -1,0 +1,21 @@
+# Игнорировать ВСЕ файлы SQLite, кроме явно указанного
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+
+# Но разрешить конкретный файл БД (исключение из правил)
+!data/db.sqlite
+
+# Игнорировать другие файлы в папке data (кроме db.sqlite)
+data/*
+!data/db.sqlite
+
+# Остальные стандартные исключения
+node_modules/
+.env
+.DS_Store
+.idea/
+.vscode/
+npm-debug.log*
+yarn-error.log*
