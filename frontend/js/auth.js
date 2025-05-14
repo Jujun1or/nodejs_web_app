@@ -1,8 +1,13 @@
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
+document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const login = document.getElementById('login').value;
-  const password = document.getElementById('password').value;
+  const loginInput = document.getElementById('login');
+  const passwordInput = document.getElementById('password');
+  
+  if (!loginInput || !passwordInput) {
+    console.error('Не найдены элементы формы');
+    return;
+  }
 
   try {
     const response = await fetch('/api/login', {
@@ -10,18 +15,26 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({ login, password })
+      body: new URLSearchParams({ 
+        login: loginInput.value, 
+        password: passwordInput.value 
+      })
     });
 
-    const data = await response.json();
-    
-    if (response.ok) {
-      window.location.href = data.redirect;
-    } else {
-      alert(data.error || 'Ошибка авторизации');
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Ошибка авторизации');
     }
+
+    const data = await response.json();
+    window.location.href = data.redirect;
+    
   } catch (error) {
-    console.error('Ошибка:', error);
-    alert('Сервер недоступен');
+    console.error('Ошибка:', error.message);
+    alert(error.message || 'Сервер недоступен');
+    
+    // Восстанавливаем форму после ошибки
+    loginInput.focus();
+    passwordInput.value = '';
   }
 });
