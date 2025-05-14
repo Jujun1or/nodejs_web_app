@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Управление товарами</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/main">Склад</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/main">Главная</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/products">Товары</a>
+          </li>
+        </ul>
+        <div class="d-flex">
+          <button id="logoutBtn" class="btn btn-outline-light">Выйти</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div id="alertsContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1100"></div>
+
+  <!-- Лоадер -->
+  <div id="loader" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-25" 
+      style="display: none; z-index: 1050;">
+    <div class="d-flex justify-content-center align-items-center h-100">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Загрузка...</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="container mt-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+      <h1 class="h2">Управление товарами</h1>
+      <button id="addProductBtn" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Добавить товар
+      </button>
+    </div>
+
+    <!-- Секция категорий (только для админа) -->
+    <div id="adminSection" class="mb-4" style="display: none;">
+      <h4>Управление категориями</h4>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="input-group mb-3">
+            <input type="text" id="newCategory" class="form-control" placeholder="Новая категория">
+            <button class="btn btn-success" id="addCategoryBtn">
+              <i class="bi bi-check-lg"></i> Добавить
+            </button>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="input-group mb-3">
+            <select id="categoriesList" class="form-select">
+              <option value="">Выберите категорию для удаления</option>
+            </select>
+            <button class="btn btn-danger" id="deleteCategoryBtn">
+              <i class="bi bi-trash"></i> Удалить
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Таблица товаров -->
+    <div class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Наименование</th>
+            <th>Категория</th>
+            <th>Место</th>
+            <th>Остаток</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody id="productsTable">
+          <!-- Товары будут здесь -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Модальное окно товара -->
+  <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Информация о товаре</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="productDetails">
+          <!-- Данные о товаре -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+          <button type="button" class="btn btn-primary admin-only" id="editProductBtn">Редактировать</button>
+          <button type="button" class="btn btn-danger admin-only" id="deleteProductBtn">Удалить</button>
+        </div>  
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно добавления/редактирования -->
+  <div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editModalTitle">Добавить товар</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="productForm">
+            <input type="hidden" id="productId">
+            <div class="mb-3">
+              <label for="productName" class="form-label">Наименование</label>
+              <input type="text" class="form-control" id="productName" required>
+            </div>
+            <div class="mb-3">
+              <label for="productCategory" class="form-label">Категория</label>
+              <select class="form-select" id="productCategory" required>
+                <option value="">Загрузка категорий...</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="productDescription" class="form-label">Описание</label>
+              <textarea class="form-control" id="productDescription" rows="3"></textarea>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="productLocation" class="form-label">Место хранения</label>
+                <input type="number" class="form-control" id="productLocation" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="productMinQty" class="form-label">Мин. остаток</label>
+                <input type="number" class="form-control" id="productMinQty" required>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-primary" id="saveProductBtn">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <script>
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+        fetch('/api/logout').then(() => window.location.href = '/login');
+        });
+    </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/products.js"></script>
+</body>
+</html>
