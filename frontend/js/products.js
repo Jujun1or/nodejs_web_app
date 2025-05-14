@@ -3,6 +3,8 @@ let currentUser = null;
 let currentProductId = null;
 const productModal = new bootstrap.Modal('#productModal');
 const editModal = new bootstrap.Modal('#editProductModal');
+const categoriesModal = new bootstrap.Modal('#categoriesModal');
+const editCategoryModal = new bootstrap.Modal('#editCategoryModal');
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
@@ -216,6 +218,17 @@ function setupEventListeners() {
   // Удаление категории
   document.getElementById('deleteCategoryBtn')?.addEventListener('click', deleteCategory);
 
+  document.getElementById('addNewCategoryBtn')?.addEventListener('click', addNewCategory);
+  document.getElementById('saveCategoryBtn')?.addEventListener('click', saveCategory);
+  
+  // Удаление категории из таблицы
+  document.querySelectorAll('.delete-category-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const categoryId = e.currentTarget.getAttribute('data-id');
+      deleteCategoryFromTable(categoryId);
+    });
+  });
+
   // Редактирование товара из модального окна просмотра
   document.getElementById('editProductBtn')?.addEventListener('click', async () => {
     productModal.hide();
@@ -234,7 +247,15 @@ function setupEventListeners() {
         showAlert('Не удалось выполнить выход', 'danger');
       });
   });
+
+  document.getElementById('manageCategoriesBtn')?.addEventListener('click', async () => {
+    await loadCategoriesTable();
+    categoriesModal.show();
+  });
+  
 }
+
+
 
 // Получение товара по ID
 async function getProductById(id) {
@@ -328,9 +349,104 @@ async function deleteProduct() {
   }
 }
 
-// Добавление категории
+async function loadCategoriesTable() {
+  try {
+    showLoader();
+    const response = await fetch('/api/categories');
+    const categories = await response.json();
+    
+    const tbody = document.getElementById('categoriesTableBody');
+    tbody.innerHTML = '';
+    
+    categories.forEach(category => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${category.id}</td>
+        <td>${category.name}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary edit-category-btn" data-id="${category.id}">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger delete-category-btn" data-id="${category.id}">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>
+      `;
+      
+      tr.querySelector('.edit-category-btn').addEventListener('click', () => editCategory(category));
+      tr.querySelector('.delete-category-btn').addEventListener('click', (e) => {
+        const categoryId = e.currentTarget.getAttribute('data-id');
+        deleteCategoryFromTable(categoryId);
+      });
+      
+      tbody.appendChild(tr);
+    });
+  } catch (error) {
+    console.error('Ошибка загрузки категорий:', error);
+    showAlert('Не удалось загрузить категории', 'danger');
+  } finally {
+    hideLoader();
+  }
+}
+
+// Добавление новой категории
 async function addCategory() {
   const name = document.getElementById('newCategory').value.trim();
+  if (!name) {
+    showAlert('Введите название категории', 'danger');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+
+    if (!response.ok) throw new Error('Ошибка добавления');
+
+    document.getElementById('newCategory').value = '';
+    await loadCategories();
+    showAlert('Категория успешно добавлена', 'success');
+  } catch (error) {
+    console.error('Ошибка добавления категории:', error);
+    showAlert('Не удалось добавить категорию', 'danger');
+  }
+}
+
+async function deleteCategoryFromTable(id) {
+  if (!id) {
+    showAlert('Выберите категорию для удаления', 'danger');
+    return;
+  }
+
+  if (!confirm('Вы уверены, что хотите удалить эту категорию?')) return;
+
+  try {
+    showLoader();
+    const response = await fetch(`/api/categories/${id}`, { 
+      method: 'DELETE' 
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Ошибка удаления');
+    }
+
+    await loadCategoriesTable();
+    await loadCategories(); // Обновляем select в форме товаров
+    showAlert('Категория успешно удалена', 'success');
+  } catch (error) {
+    console.error('Ошибка удаления категории:', error);
+    showAlert(error.message || 'Не удалось удалить категорию', 'danger');
+  } finally {
+    hideLoader();
+  }
+}
+
+async function addNewCategory() {
+  const name = document.getElementById('newCategoryName').value.trim();
   if (!name) {
     showAlert('Введите название категории', 'danger');
     return;
@@ -346,12 +462,53 @@ async function addCategory() {
 
     if (!response.ok) throw new Error('Ошибка добавления');
 
-    document.getElementById('newCategory').value = '';
-    await loadCategories();
+    document.getElementById('newCategoryName').value = '';
+    await loadCategoriesTable();
+    await loadCategories(); // Обновляем select в форме товаров
     showAlert('Категория успешно добавлена', 'success');
   } catch (error) {
     console.error('Ошибка добавления категории:', error);
     showAlert('Не удалось добавить категорию', 'danger');
+  } finally {
+    hideLoader();
+  }
+}
+
+// Редактирование категории
+function editCategory(category) {
+  document.getElementById('editCategoryId').value = category.id;
+  document.getElementById('editCategoryName').value = category.name;
+  categoriesModal.hide();
+  editCategoryModal.show();
+}
+
+// Сохранение изменений категории
+async function saveCategory() {
+  const id = document.getElementById('editCategoryId').value;
+  const name = document.getElementById('editCategoryName').value.trim();
+
+  if (!name) {
+    showAlert('Введите название категории', 'danger');
+    return;
+  }
+
+  try {
+    showLoader();
+    const response = await fetch(`/api/categories/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+
+    if (!response.ok) throw new Error('Ошибка сохранения');
+
+    editCategoryModal.hide();
+    await loadCategoriesTable();
+    await loadCategories(); // Обновляем select в форме товаров
+    showAlert('Категория успешно обновлена', 'success');
+  } catch (error) {
+    console.error('Ошибка сохранения категории:', error);
+    showAlert('Не удалось сохранить категорию', 'danger');
   } finally {
     hideLoader();
   }
@@ -370,7 +527,6 @@ async function deleteCategory() {
   if (!confirm('Вы уверены, что хотите удалить эту категорию?')) return;
 
   try {
-    showLoader();
     const response = await fetch(`/api/categories/${categoryId}`, { 
       method: 'DELETE' 
     });
@@ -385,8 +541,6 @@ async function deleteCategory() {
   } catch (error) {
     console.error('Ошибка удаления категории:', error);
     showAlert(error.message || 'Не удалось удалить категорию', 'danger');
-  } finally {
-    hideLoader();
   }
 }
 

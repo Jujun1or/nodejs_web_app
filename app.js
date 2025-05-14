@@ -183,6 +183,16 @@ app.post('/api/categories', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+app.put('/api/categories/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { name } = req.body;
+    await dbRun('UPDATE Categories SET name = ? WHERE id = ?', [name, req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/api/categories/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const products = await dbAll('SELECT * FROM Products WHERE category_id = ?', [req.params.id]);

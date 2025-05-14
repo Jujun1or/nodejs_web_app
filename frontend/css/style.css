@@ -27,3 +27,18 @@ body {
 .modal-body p {
   margin-bottom: 10px;
 }
+
+/* Стили для модального окна категорий */
+#categoriesModal .table {
+  margin-top: 20px;
+}
+
+#categoriesModal .table th {
+  background-color: #f8f9fa;
+}
+
+/* Кнопки действий */
+.edit-category-btn, .delete-category-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
