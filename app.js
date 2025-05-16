@@ -59,6 +59,10 @@ const requireAdmin = (req, res, next) => {
 // Роуты авторизации
 app.get('/', (req, res) => res.redirect('/main'));
 
+app.get('/operations', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/operations.html'));
+});
+
 app.post('/api/login', async (req, res) => {
   try {
     const user = await dbGet(
@@ -201,6 +205,116 @@ app.delete('/api/categories/:id', requireAuth, requireAdmin, async (req, res) =>
     }
     await dbRun('DELETE FROM Categories WHERE id = ?', [req.params.id]);
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Роуты операций
+app.post('/api/operations/incoming', requireAuth, async (req, res) => {
+  try {
+    const { product_id, quantity, document_number, supplier_name, comment } = req.body;
+    const user_id = req.session.user.id;
+
+    if (!product_id || !quantity || !document_number || !supplier_name) {
+      return res.status(400).json({ error: 'Заполните все обязательные поля' });
+    }
+
+    await dbRun('BEGIN TRANSACTION');
+    
+    await dbRun(
+      `INSERT INTO Operations (product_id, type, quantity, document_number, supplier_name, user_id, comment)
+       VALUES (?, 'incoming', ?, ?, ?, ?, ?)`,
+      [product_id, quantity, document_number, supplier_name, user_id, comment]
+    );
+
+    await dbRun(
+      `UPDATE Products SET current_quantity = current_quantity + ? WHERE id = ?`,
+      [quantity, product_id]
+    );
+
+    await dbRun('COMMIT');
+    res.json({ success: true });
+  } catch (err) {
+    await dbRun('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/operations/outgoing', requireAuth, async (req, res) => {
+  try {
+    const { product_id, quantity, document_number, supplier_name, comment } = req.body;
+    const user_id = req.session.user.id;
+
+    if (!product_id || !quantity || !document_number || !supplier_name) {
+      return res.status(400).json({ error: 'Заполните все обязательные поля' });
+    }
+
+    const product = await dbGet('SELECT current_quantity FROM Products WHERE id = ?', [product_id]);
+    if (product.current_quantity < quantity) {
+      return res.status(400).json({ error: 'Недостаточно товара на складе' });
+    }
+
+    await dbRun('BEGIN TRANSACTION');
+    
+    await dbRun(
+      `INSERT INTO Operations (product_id, type, quantity, document_number, supplier_name, user_id, comment)
+       VALUES (?, 'outgoing', ?, ?, ?, ?, ?)`,
+      [product_id, quantity, document_number, supplier_name, user_id, comment]
+    );
+
+    await dbRun(
+      `UPDATE Products SET current_quantity = current_quantity - ? WHERE id = ?`,
+      [quantity, product_id]
+    );
+
+    await dbRun('COMMIT');
+    res.json({ success: true });
+  } catch (err) {
+    await dbRun('ROLLBACK');
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/operations', requireAuth, async (req, res) => {
+  try {
+    const { type, startDate, endDate, product_id } = req.query;
+    
+    let query = `
+      SELECT 
+        o.*, 
+        p.name as product_name,
+        u.login as user_login,
+        c.name as category_name
+      FROM Operations o
+      LEFT JOIN Products p ON o.product_id = p.id
+      LEFT JOIN Categories c ON p.category_id = c.id
+      LEFT JOIN Users u ON o.user_id = u.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (type) {
+      query += ' AND o.type = ?';
+      params.push(type);
+    }
+    if (startDate) {
+      query += ' AND date(o.date) >= date(?)';
+      params.push(startDate);
+    }
+    if (endDate) {
+      query += ' AND date(o.date) <= date(?)';
+      params.push(endDate);
+    }
+    if (product_id) {
+      query += ' AND o.product_id = ?';
+      params.push(product_id);
+    }
+
+    query += ' ORDER BY o.date DESC';
+
+    const operations = await dbAll(query, params);
+    res.json(operations);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
