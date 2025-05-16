@@ -42,3 +42,33 @@ body {
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
 }
+
+#operationsTable tr.table-success td {
+  background-color: #d1e7dd;
+}
+
+#operationsTable tr.table-danger td {
+  background-color: #f8d7da;
+}
+
+#operationModal .modal-dialog {
+  max-width: 600px;
+}
+
+#operationsTable td {
+  vertical-align: middle;
+}
+
+#searchInput::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.form-check-label {
+  user-select: none;
+}
+
+.card.filter-card {
+  background-color: #f8f9fa;
+  border: 1px solid rgba(0,0,0,.125);
+}

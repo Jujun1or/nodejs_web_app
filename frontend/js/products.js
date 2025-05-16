@@ -6,6 +6,14 @@ const editModal = new bootstrap.Modal('#editProductModal');
 const categoriesModal = new bootstrap.Modal('#categoriesModal');
 const editCategoryModal = new bootstrap.Modal('#editCategoryModal');
 
+let currentFilters = {
+  search: '',
+  category: '',
+  location: '',
+  availability: '',
+  critical: false
+};
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
   await checkAuth();
@@ -41,25 +49,83 @@ function toggleAdminFeatures(isAdmin) {
 
 // Инициализация страницы
 async function initPage() {
-  await loadProducts();
   await loadCategories();
+  await loadProducts();
   setupEventListeners();
+  setupFilters();
 }
 
 // Загрузка списка товаров
 async function loadProducts() {
   try {
     showLoader();
-    const response = await fetch('/api/products');
+    
+    const params = new URLSearchParams({
+      search: currentFilters.search,
+      category: currentFilters.category,
+      location: currentFilters.location,
+      availability: currentFilters.availability,
+      critical: currentFilters.critical
+    });
+
+    const response = await fetch(`/api/products?${params}`);
     const products = await response.json();
     renderProducts(products);
+    
   } catch (error) {
-    console.error('Ошибка загрузки товаров:', error);
-    showAlert('Не удалось загрузить товары', 'danger');
+    showAlert('Ошибка загрузки товаров', 'danger');
   } finally {
     hideLoader();
   }
 }
+
+function setupFilters() {
+  const debounceLoad = debounce(loadProducts, 300);
+  
+  // Элементы фильтров
+  const filterElements = {
+    searchInput: document.getElementById('searchInput'),
+    categoryFilter: document.getElementById('categoryFilter'),
+    locationFilter: document.getElementById('locationFilter'),
+    availabilityFilter: document.getElementById('availabilityFilter'),
+    criticalStock: document.getElementById('criticalStock')
+  };
+
+  // Обработчики изменений
+  filterElements.searchInput.addEventListener('input', e => {
+    currentFilters.search = e.target.value;
+    debounceLoad();
+  });
+
+  filterElements.categoryFilter.addEventListener('change', e => {
+    currentFilters.category = e.target.value;
+    loadProducts();
+  });
+
+  filterElements.locationFilter.addEventListener('change', e => {
+    currentFilters.location = e.target.value;
+    loadProducts();
+  });
+
+  filterElements.availabilityFilter.addEventListener('change', e => {
+    currentFilters.availability = e.target.value;
+    loadProducts();
+  });
+
+  filterElements.criticalStock.addEventListener('change', e => {
+    currentFilters.critical = e.target.checked;
+    loadProducts();
+  });
+}
+
+function debounce(func, timeout = 300) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { func.apply(this, args); }, timeout);
+  };
+}
+
 
 // Отображение товаров в таблице
 function renderProducts(products) {
@@ -144,10 +210,24 @@ async function editProduct(product) {
 // Загрузка категорий
 async function loadCategories() {
   try {
+    const response = await fetch('/api/categories');
+    const categories = await response.json();
+    
+    // Для фильтра
+    const categoryFilter = document.getElementById('categoryFilter');
+    categoryFilter.innerHTML = '<option value="">Все категории</option>';
+    categories.forEach(c => {
+      const option = document.createElement('option');
+      option.value = c.id;
+      option.textContent = c.name;
+      categoryFilter.appendChild(option);
+    });
+    
+    // Для формы редактирования (существующий код)
     await loadCategoriesForSelect();
     await loadCategoriesForDelete();
+    
   } catch (error) {
-    console.error('Ошибка загрузки категорий:', error);
     showAlert('Не удалось загрузить категории', 'danger');
   }
 }
