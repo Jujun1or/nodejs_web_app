@@ -117,16 +117,55 @@ app.get('/api/products/:id', requireAuth, async (req, res) => {
 
 app.get('/api/products', requireAuth, async (req, res) => {
   try {
-    const products = await dbAll(`
+    const { search, category, location, availability, critical } = req.query;
+    
+    let query = `
       SELECT p.*, c.name as category_name 
       FROM Products p
       LEFT JOIN Categories c ON p.category_id = c.id
-    `);
+      WHERE 1=1
+    `;
+    
+    const params = [];
+
+    if (search) {
+      query += ' AND p.name LIKE ?';
+      params.push(`%${search}%`);
+    }
+
+    if (category) {
+      query += ' AND p.category_id = ?';
+      params.push(category);
+    }
+
+    if (location) {
+      query += ' AND p.location = ?';
+      params.push(location);
+    }
+
+    if (availability) {
+      switch(availability) {
+        case 'in_stock':
+          query += ' AND p.current_quantity > 0';
+          break;
+        case 'out_of_stock':
+          query += ' AND p.current_quantity = 0';
+          break;
+      }
+    }
+
+    if (critical === 'true') {
+      query += ' AND p.current_quantity < p.min_quantity';
+    }
+
+    const products = await dbAll(query, params);
     res.json(products);
+    
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.post('/api/products', requireAuth, requireAdmin, async (req, res) => {
   try {

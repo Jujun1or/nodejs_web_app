@@ -58,3 +58,17 @@ body {
 #operationsTable td {
   vertical-align: middle;
 }
+
+#searchInput::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.form-check-label {
+  user-select: none;
+}
+
+.card.filter-card {
+  background-color: #f8f9fa;
+  border: 1px solid rgba(0,0,0,.125);
+}
