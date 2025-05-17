@@ -359,6 +359,163 @@ app.get('/api/operations', requireAuth, async (req, res) => {
   }
 });
 
+// ================== Роуты отчетов ==================
+
+// Текущие остатки всех товаров
+app.get('/api/reports/current-stock', requireAuth, async (req, res) => {
+  try {
+    const products = await dbAll(`
+      SELECT p.id, p.name, c.name as category, p.current_quantity, p.min_quantity, 
+             p.location, p.description
+      FROM Products p
+      LEFT JOIN Categories c ON p.category_id = c.id
+      ORDER BY p.current_quantity DESC
+    `);
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Товары с остатком ниже минимального
+app.get('/api/reports/low-stock', requireAuth, async (req, res) => {
+  try {
+    const products = await dbAll(`
+      SELECT p.id, p.name, c.name as category, p.current_quantity, p.min_quantity, 
+             p.location, p.description
+      FROM Products p
+      LEFT JOIN Categories c ON p.category_id = c.id
+      WHERE p.current_quantity < p.min_quantity
+      ORDER BY (p.min_quantity - p.current_quantity) DESC
+    `);
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Операции за период
+app.get('/api/reports/operations', requireAuth, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const operations = await dbAll(`
+      SELECT o.id, p.name as product_name, o.type, o.quantity, 
+             o.date, o.document_number, o.supplier_name, 
+             u.login as user_login, o.comment
+      FROM Operations o
+      JOIN Products p ON o.product_id = p.id
+      JOIN Users u ON o.user_id = u.id
+      WHERE date(o.date) BETWEEN date(?) AND date(?)
+      ORDER BY o.date DESC
+    `, [startDate, endDate]);
+    res.json(operations);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Движение товара за период
+app.get('/api/reports/product-movement', requireAuth, async (req, res) => {
+  try {
+    const { productId, startDate, endDate } = req.query;
+    const movements = await dbAll(`
+      SELECT o.id, o.type, o.quantity, o.date, 
+             o.document_number, o.supplier_name, 
+             u.login as user_login, o.comment
+      FROM Operations o
+      JOIN Users u ON o.user_id = u.id
+      WHERE o.product_id = ? 
+        AND date(o.date) BETWEEN date(?) AND date(?)
+      ORDER BY o.date DESC
+    `, [productId, startDate, endDate]);
+    res.json(movements);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Экспорт в CSV
+app.get('/api/reports/export-csv', requireAuth, async (req, res) => {
+  try {
+    const { reportType, ...queryParams } = req.query;
+    let data, filename;
+
+    switch(reportType) {
+      case 'current-stock':
+        data = await dbAll(`
+          SELECT p.id, p.name, c.name as category, p.current_quantity, 
+                 p.min_quantity, p.location, p.description
+          FROM Products p
+          LEFT JOIN Categories c ON p.category_id = c.id
+          ORDER BY p.current_quantity DESC
+        `);
+        filename = 'current_stock.csv';
+        break;
+      
+      case 'low-stock':
+        data = await dbAll(`
+          SELECT p.id, p.name, c.name as category, p.current_quantity, 
+                 p.min_quantity, p.location, p.description
+          FROM Products p
+          LEFT JOIN Categories c ON p.category_id = c.id
+          WHERE p.current_quantity < p.min_quantity
+          ORDER BY (p.min_quantity - p.current_quantity) DESC
+        `);
+        filename = 'low_stock.csv';
+        break;
+      
+      case 'operations':
+        const { startDate, endDate } = queryParams;
+        data = await dbAll(`
+          SELECT o.id, p.name as product_name, o.type, o.quantity, 
+                 o.date, o.document_number, o.supplier_name, 
+                 u.login as user_login, o.comment
+          FROM Operations o
+          JOIN Products p ON o.product_id = p.id
+          JOIN Users u ON o.user_id = u.id
+          WHERE date(o.date) BETWEEN date(?) AND date(?)
+          ORDER BY o.date DESC
+        `, [startDate, endDate]);
+        filename = 'operations.csv';
+        break;
+      
+      case 'product-movement':
+        const { productId, startDate: pStartDate, endDate: pEndDate } = queryParams;
+        data = await dbAll(`
+          SELECT o.id, o.type, o.quantity, o.date, 
+                 o.document_number, o.supplier_name, 
+                 u.login as user_login, o.comment
+          FROM Operations o
+          JOIN Users u ON o.user_id = u.id
+          WHERE o.product_id = ? 
+            AND date(o.date) BETWEEN date(?) AND date(?)
+          ORDER BY o.date DESC
+        `, [productId, pStartDate, pEndDate]);
+        filename = 'product_movement.csv';
+        break;
+      
+      default:
+        return res.status(400).json({ error: 'Invalid report type' });
+    }
+
+    // Конвертация в CSV
+    const header = Object.keys(data[0] || {}).join(',');
+    const rows = data.map(row => 
+      Object.values(row).map(v => 
+        `"${v !== null ? v.toString().replace(/"/g, '""') : ''}"`
+      ).join(',')
+    );
+    const csv = [header, ...rows].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // Проверка прав администратора
 app.get('/api/check-auth', (req, res) => {
   if (!req.session.user) {
@@ -382,6 +539,10 @@ app.get('/main', requireAuth, (req, res) => {
 
 app.get('/products', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend/products.html'));
+});
+
+app.get('/reports', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/reports.html'));
 });
 
 const PORT = 3000;

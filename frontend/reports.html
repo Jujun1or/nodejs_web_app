@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Отчеты</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/main">Склад</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/main">Главная</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/products">Товары</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/operations">Операции</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/reports">Отчеты</a>
+          </li>
+        </ul>
+        <div class="d-flex">
+          <button id="logoutBtn" class="btn btn-outline-light">Выйти</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div id="alertsContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1100"></div>
+
+  <div id="loader" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-25" 
+      style="display: none; z-index: 1050;">
+    <div class="d-flex justify-content-center align-items-center h-100">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Загрузка...</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="container mt-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+      <h1 class="h2">Отчеты</h1>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Текущие остатки</h5>
+                <p class="card-text">Отчет по всем товарам с текущими остатками на складе</p>
+                <button id="currentStockBtn" class="btn btn-primary">Сформировать</button>
+                <button id="exportCurrentStockBtn" class="btn btn-success ms-2" style="display: none;">
+                <i class="bi bi-download"></i> CSV
+                </button>
+            </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Критические остатки</h5>
+                <p class="card-text">Товары с остатком ниже минимального уровня</p>
+                <button id="lowStockBtn" class="btn btn-primary">Сформировать</button>
+                <button id="exportLowStockBtn" class="btn btn-success ms-2" style="display: none;">
+                <i class="bi bi-download"></i> CSV
+                </button>
+            </div>
+            </div>
+        </div>
+        </div>
+
+        <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Операции за период</h5>
+                <p class="card-text">Все приходные и расходные операции за выбранный период</p>
+                <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <input type="date" id="operationsStartDate" class="form-control">
+                </div>
+                <div class="col-6">
+                    <input type="date" id="operationsEndDate" class="form-control">
+                </div>
+                </div>
+                <button id="operationsBtn" class="btn btn-primary">Сформировать</button>
+                <button id="exportOperationsBtn" class="btn btn-success ms-2" style="display: none;">
+                <i class="bi bi-download"></i> CSV
+                </button>
+            </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Движение товара</h5>
+                <p class="card-text">История операций по конкретному товару за период</p>
+                <div class="row g-2 mb-2">
+                <div class="col-12">
+                    <select id="productSelect" class="form-select">
+                    <option value="">Выберите товар</option>
+                    </select>
+                </div>
+                <div class="col-6">
+                    <input type="date" id="movementStartDate" class="form-control">
+                </div>
+                <div class="col-6">
+                    <input type="date" id="movementEndDate" class="form-control">
+                </div>
+                </div>
+                <button id="movementBtn" class="btn btn-primary">Сформировать</button>
+                <button id="exportMovementBtn" class="btn btn-success ms-2" style="display: none;">
+                    <i class="bi bi-download"></i> CSV
+                </button>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-striped table-hover" id="reportTable">
+        <thead id="reportTableHeader">
+          <!-- Заголовки будут добавлены динамически -->
+        </thead>
+        <tbody id="reportTableBody">
+          <!-- Данные отчета будут здесь -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/reports.js"></script>
+</body>
+</html>

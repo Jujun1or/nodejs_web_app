@@ -72,3 +72,21 @@ body {
   background-color: #f8f9fa;
   border: 1px solid rgba(0,0,0,.125);
 }
+
+.card {
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+#reportTable {
+  margin-top: 20px;
+}
+
+.table-responsive {
+  max-height: 600px;
+  overflow-y: auto;
+}
