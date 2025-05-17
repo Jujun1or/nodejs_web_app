@@ -10,32 +10,45 @@
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/main">Склад</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                <a class="nav-link" href="/main">Главная</a>
-                </li>
-                <li class="nav-item">
-                <a class="nav-link" href="/products">Товары</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/operations">Операции</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/reports">Отчеты</a>
-                </li>
-            </ul>
-            <div class="d-flex">
-                <button id="logoutBtn" class="btn btn-outline-light">Выйти</button>
-            </div>
-            </div>
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/main">
+        <i class="bi bi-box-seam me-2"></i>СкладPRO
+      </a>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="/main">
+              <i class="bi bi-house-door me-1"></i>Главная
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/products">
+              <i class="bi bi-box-seam me-1"></i>Товары
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/operations">
+              <i class="bi bi-clipboard-data me-1"></i>Операции
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/reports">
+              <i class="bi bi-graph-up me-1"></i>Отчеты
+            </a>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center">
+          <span class="text-light me-3 user-badge" id="userInfo">
+            <i class="bi bi-person-circle me-1"></i>
+            <span id="username"></span>
+          </span>
+          <button id="logoutBtn" class="btn btn-outline-light btn-sm">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
         </div>
-    </nav>
+      </div>
+    </div>
+  </nav>
 
   <div id="alertsContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 1100"></div>
 
