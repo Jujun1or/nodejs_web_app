@@ -43,6 +43,9 @@ connect-sqlite3@0.9.15
 
 bash
 mkdir data
+Для инициализации бд с тестовыми данными:
+bash
+node init-db.js
 5. Запуск приложения
 bash
 node app.js
