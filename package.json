@@ -1,0 +1,27 @@
+{
+  "name": "nodejs_web_app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jujun1or/nodejs_web_app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jujun1or/nodejs_web_app/issues"
+  },
+  "homepage": "https://github.com/Jujun1or/nodejs_web_app#readme",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "connect-sqlite3": "^0.9.15",
+    "express": "^4.18.2",
+    "express-session": "^1.18.1",
+    "sqlite3": "^5.1.6"
+  }
+}
