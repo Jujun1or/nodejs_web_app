@@ -498,18 +498,22 @@ app.get('/api/reports/export-csv', requireAuth, async (req, res) => {
         return res.status(400).json({ error: 'Invalid report type' });
     }
 
-    // Конвертация в CSV
+    // Конвертация в CSV с UTF-8 BOM
     const header = Object.keys(data[0] || {}).join(',');
     const rows = data.map(row => 
       Object.values(row).map(v => 
         `"${v !== null ? v.toString().replace(/"/g, '""') : ''}"`
       ).join(',')
     );
-    const csv = [header, ...rows].join('\n');
+    
+    // Добавляем BOM и конвертируем в Buffer с UTF-8
+    const csvContent = '\ufeff' + [header, ...rows].join('\n');
+    const csvBuffer = Buffer.from(csvContent, 'utf8');
 
-    res.setHeader('Content-Type', 'text/csv');
+    // Устанавливаем правильные заголовки
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-    res.send(csv);
+    res.send(csvBuffer);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
