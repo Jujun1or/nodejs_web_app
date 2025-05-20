@@ -27,6 +27,16 @@ async function checkAuth() {
   }
 }
 
+// Функция выхода из системы
+function logout() {
+  fetch('/api/logout')
+    .then(() => window.location.href = '/login')
+    .catch(err => {
+      console.error('Ошибка при выходе:', err);
+      showAlert('Не удалось выполнить выход', 'danger');
+    });
+}
+
 // Показываем/скрываем функции админа
 function toggleAdminFeatures(isAdmin) {
   // Для отчетов обычно не требуется разделение прав
@@ -75,9 +85,7 @@ async function loadProductsForSelect() {
 // Настройка обработчиков событий
 function setupEventListeners() {
   // Кнопка выхода
-  document.getElementById('logoutBtn')?.addEventListener('click', () => {
-    fetch('/api/logout').then(() => window.location.href = '/login');
-  });
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
 
   // Текущие остатки
   document.getElementById('currentStockBtn')?.addEventListener('click', async () => {

@@ -47,6 +47,16 @@ function toggleAdminFeatures(isAdmin) {
   });
 }
 
+// Функция выхода из системы
+function logout() {
+  fetch('/api/logout')
+    .then(() => window.location.href = '/login')
+    .catch(err => {
+      console.error('Ошибка при выходе:', err);
+      showAlert('Не удалось выполнить выход', 'danger');
+    });
+}
+
 // Инициализация страницы
 async function initPage() {
   await loadCategories();
@@ -125,7 +135,6 @@ function debounce(func, timeout = 300) {
     timer = setTimeout(() => { func.apply(this, args); }, timeout);
   };
 }
-
 
 // Отображение товаров в таблице
 function renderProducts(products) {
@@ -223,7 +232,7 @@ async function loadCategories() {
       categoryFilter.appendChild(option);
     });
     
-    // Для формы редактирования (существующий код)
+    // Для формы редактирования
     await loadCategoriesForSelect();
     await loadCategoriesForDelete();
     
@@ -319,23 +328,13 @@ function setupEventListeners() {
   });
 
   // Обработчик кнопки выхода
-  document.getElementById('logoutBtn')?.addEventListener('click', () => {
-    fetch('/api/logout')
-      .then(() => window.location.href = '/login')
-      .catch(err => {
-        console.error('Ошибка при выходе:', err);
-        showAlert('Не удалось выполнить выход', 'danger');
-      });
-  });
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
 
   document.getElementById('manageCategoriesBtn')?.addEventListener('click', async () => {
     await loadCategoriesTable();
     categoriesModal.show();
   });
-  
 }
-
-
 
 // Получение товара по ID
 async function getProductById(id) {

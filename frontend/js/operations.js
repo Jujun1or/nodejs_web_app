@@ -17,6 +17,16 @@ async function checkAuth() {
   }
 }
 
+// Функция выхода из системы
+function logout() {
+  fetch('/api/logout')
+    .then(() => window.location.href = '/login')
+    .catch(err => {
+      console.error('Ошибка при выходе:', err);
+      showAlert('Не удалось выполнить выход', 'danger');
+    });
+}
+
 async function initPage() {
   await loadProductsForSelect();
   await loadOperations();
@@ -69,6 +79,9 @@ function renderOperations(operations) {
 }
 
 function setupEventListeners() {
+  // Обработчик кнопки выхода
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
+
   document.getElementById('newIncomingBtn').addEventListener('click', () => 
     showOperationModal('incoming'));
   

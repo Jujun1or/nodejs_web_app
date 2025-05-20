@@ -201,10 +201,18 @@
       }
     }
 
+    // Функция выхода из системы
+    function logout() {
+      fetch('/api/logout')
+        .then(() => window.location.href = '/login')
+        .catch(err => {
+          console.error('Ошибка при выходе:', err);
+          alert('Не удалось выполнить выход');
+        });
+    }
+
     // Обработчик кнопки выхода
-    document.getElementById('logoutBtn')?.addEventListener('click', () => {
-      fetch('/api/logout').then(() => window.location.href = '/login');
-    });
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
 
     // Инициализация при загрузке
     document.addEventListener('DOMContentLoaded', initPage);
